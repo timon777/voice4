@@ -16,20 +16,6 @@ allprojects {
         google()
         mavenCentral()
     }
-    
-    // Переопределяем Kotlin для всех подпроектов, включая плагины
-    project.plugins.withId('kotlin-android') {
-        project.kotlin.kotlinDependencyHandler.api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    }
-    
-    // Принудительно задаем версию всех зависимостей Kotlin
-    configurations.all {
-        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-            if (details.requested.group == 'org.jetbrains.kotlin') {
-                details.useVersion kotlin_version
-            }
-        }
-    }
 }
 
 rootProject.buildDir = '../build'
@@ -41,11 +27,6 @@ subprojects {
         if (project.hasProperty('android')) {
             android {
                 compileSdkVersion 34
-                
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_1_8
-                    targetCompatibility JavaVersion.VERSION_1_8
-                }
             }
         }
     }
