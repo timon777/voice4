@@ -1,0 +1,18 @@
+name: voice_alert_app
+description: Voice alert Flutter app with full Android support and CI
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^17.0.0
+  speech_to_text: ^6.5.0
+  flutter_background_service: ^3.0.1
+  flutter_sms: ^2.3.2
+  vibration: ^1.7.4
+
+flutter:
+  uses-material-design: true
