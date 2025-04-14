@@ -1,11 +1,175 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:vibration/vibration.dart';
+import 'dart:async';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  const initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  // Инициализация фонового сервиса
+  await initializeService();
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+// Инициализация фонового сервиса
+Future<void> initializeService() async {
+  final service = FlutterBackgroundService();
+  
+  await service.configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onStart,
+      autoStart: true,
+      isForegroundMode: true,
+      autoStartOnBoot: true,
+      notificationChannelId: 'voice_alert_channel',
+      initialNotificationTitle: 'Голосовое оповещение',
+      initialNotificationContent: 'Приложение прослушивает команды помощи',
+      foregroundServiceNotificationId: 888,
+    ),
+    iosConfiguration: IosConfiguration(),
+  );
+  
+  await service.startService();
+}
+
+// Функция, запускаемая в фоновом режиме
+@pragma('vm:entry-point')
+void onStart(ServiceInstance service) async {
+  final speech = SpeechToText();
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  // Канал уведомлений для Android
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'alert', // id
+    'Оповещения о помощи', // name
+    description: 'Канал для уведомлений о призывах о помощи', // description
+    importance: Importance.max,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
+  // Инициализация распознавания речи
+  if (await speech.initialize()) {
+    // Использование новых параметров вместо устаревших
+    speech.listen(
+      onResult: (result) {
+        final text = result.recognizedWords.toLowerCase();
+        if (text.contains("помогите")) {
+          flutterLocalNotificationsPlugin.show(
+            0,
+            'Тревога',
+            'Обнаружено слово помощи!',
+            NotificationDetails(
+              android: AndroidNotificationDetails(
+                channel.id,
+                channel.name,
+                channelDescription: channel.description,
+                importance: Importance.max,
+                priority: Priority.high,
+                ticker: 'alarm',
+              ),
+            ),
+          );
+          sendEmergencySms();
+          triggerVibration();
+        }
+      },
+      // Использование SpeechListenOptions вместо устаревших параметров
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        cancelOnError: false,
+        partialResults: true,
+      ),
+    );
+  }
+
+  // Поддержка периодических проверок для сервиса
+  service.on('stopService').listen((event) {
+    service.stopSelf();
+  });
+
+  // Периодическое обновление для поддержания работы сервиса
+  Timer.periodic(const Duration(seconds: 30), (timer) async {
+    // Проверяем, является ли сервис Android-сервисом
+    if (service is AndroidServiceInstance) {
+      if (await service.isForegroundService()) {
+        // Обновляем уведомление
+        service.setForegroundNotificationInfo(
+          title: "Голосовое оповещение активно",
+          content: "Приложение прослушивает команды помощи",
+        );
+      }
+    }
+  });
+}
+
+void sendEmergencySms() async {
+  const String message = "Сигнал тревоги от ребенка!";
+  const String recipient = "+77001234567";
+  
+  // Временно отключаем отправку SMS до решения проблемы с плагином
+  debugPrint("SMS отправка отключена для тестовой сборки");
+  debugPrint("Сообщение: $message, получатель: $recipient");
+  
+  // TODO: Реализовать отправку SMS с использованием другого плагина
+  // Например, telephony: ^0.2.0
+}
+
+void triggerVibration() async {
+  if (await Vibration.hasVibrator() ?? false) {
+    Vibration.vibrate(pattern: [500, 1000, 500, 2000]);
+  }
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  String _status = 'Ожидание команды помощи...';
+  bool _isServiceRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkServiceStatus();
+  }
+
+  Future<void> _checkServiceStatus() async {
+    final service = FlutterBackgroundService();
+    bool isRunning = await service.isRunning();
+    setState(() {
+      _isServiceRunning = isRunning;
+      _status = isRunning 
+          ? 'Сервис активен: ожидание команды помощи...' 
+          : 'Сервис остановлен. Нажмите для запуска';
+    });
+  }
+
+  Future<void> _toggleService() async {
+    final service = FlutterBackgroundService();
+    
+    if (_isServiceRunning) {
+      service.invoke('stopService');
+    } else {
+      service.startService();
+    }
+    
+    await _checkServiceStatus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +177,40 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Голосовое оповещение'),
+          backgroundColor: Colors.red,
         ),
-        body: const Center(
-          child: Text('Тестовое приложение'),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _isServiceRunning ? Icons.mic : Icons.mic_off,
+                size: 80,
+                color: _isServiceRunning ? Colors.green : Colors.grey,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _status,
+                style: const TextStyle(fontSize: 18),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: _toggleService,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isServiceRunning ? Colors.red : Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30, 
+                    vertical: 15,
+                  ),
+                ),
+                child: Text(
+                  _isServiceRunning ? 'Остановить сервис' : 'Запустить сервис',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
