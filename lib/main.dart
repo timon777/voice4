@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:vibration/vibration.dart';
 import 'dart:async'; // Добавляем импорт для Timer
@@ -101,14 +102,11 @@ void onStart(ServiceInstance service) async {
 
   // Периодическое обновление для поддержания работы сервиса
   Timer.periodic(const Duration(seconds: 30), (timer) async {
-    // Правильная проверка типа AndroidServiceInstance
-    if (service is ServiceInstance && 
-        service.platform == ServicePlatform.android) {
-      // Проверяем, запущен ли сервис в фоновом режиме
-      final AndroidServiceInstance androidService = service as AndroidServiceInstance;
-      if (await androidService.isForegroundService()) {
+    // Проверяем, является ли сервис Android-сервисом
+    if (service is AndroidServiceInstance) {
+      if (await service.isForegroundService()) {
         // Обновляем уведомление
-        androidService.setForegroundNotificationInfo(
+        service.setForegroundNotificationInfo(
           title: "Голосовое оповещение активно",
           content: "Приложение прослушивает команды помощи",
         );
@@ -121,8 +119,9 @@ void sendEmergencySms() async {
   const String message = "Сигнал тревоги от ребенка!";
   const List<String> recipients = ["+77001234567"];
   try {
-    String result = await sendSMS(message: message, recipients: recipients, sendDirect: true) as String;
-    debugPrint("SMS отправлено: $result");
+    // Не приводим результат к типу String, так как функция имеет тип Future<void>
+    await sendSMS(message: message, recipients: recipients, sendDirect: true);
+    debugPrint("SMS отправлено");
   } catch (e) {
     debugPrint("Ошибка отправки SMS: $e");
   }
@@ -164,11 +163,13 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _toggleService() async {
     final service = FlutterBackgroundService();
+    
     if (_isServiceRunning) {
-      await service.invoke('stopService');
+      service.invoke('stopService');
     } else {
-      await service.startService();
+      service.startService();
     }
+    
     await _checkServiceStatus();
   }
 
