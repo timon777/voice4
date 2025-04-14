@@ -1,4 +1,3 @@
-// Настройка репозиториев для плагинов - должна быть первой в файле
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -7,31 +6,21 @@ pluginManagement {
     }
 }
 
-// Подключение плагинов Flutter
-def flutterSdkPath = properties.getProperty("flutter.sdk")
-def flutterProjectRoot = rootProject.projectDir.parentFile.toPath()
-
-def plugins = new Properties()
-def pluginsFile = new File(flutterProjectRoot.toFile(), '.flutter-plugins')
-if (pluginsFile.exists()) {
-    pluginsFile.withReader('UTF-8') { reader -> plugins.load(reader) }
-}
-
-plugins.each { name, path ->
-    def pluginDirectory = flutterProjectRoot.resolve(path).toFile()
-    include ":$name"
-    project(":$name").projectDir = pluginDirectory
-}
-
-// Подключение модуля приложения
 include ':app'
 
-// Конфигурация для определения плагинов
-def localPropertiesFile = new File(project.rootProject.projectDir, "local.properties")
+def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
 def properties = new Properties()
 
-assert localPropertiesFile.exists()
-localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+}
 
-assert properties.getProperty("flutter.sdk") != null
-apply from: "$properties.getProperty("flutter.sdk")/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+def flutterSdkPath = properties.getProperty("flutter.sdk")
+if (flutterSdkPath == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterProjectRoot = rootProject.projectDir.parentFile.toPath()
+
+// Подключение плагинов Flutter
+apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
