@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:vibration/vibration.dart';
-import 'dart:async'; // Добавляем импорт для Timer
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -119,7 +118,6 @@ void sendEmergencySms() async {
   const String message = "Сигнал тревоги от ребенка!";
   const List<String> recipients = ["+77001234567"];
   try {
-    // Не приводим результат к типу String, так как функция имеет тип Future<void>
     await sendSMS(message: message, recipients: recipients, sendDirect: true);
     debugPrint("SMS отправлено");
   } catch (e) {
