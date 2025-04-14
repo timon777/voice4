@@ -1,0 +1,2 @@
+# Игнорируем flutter_sms плагин при сборке
+/flutter_sms/

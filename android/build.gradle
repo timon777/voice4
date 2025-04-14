@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.8.0'  // Обновлено до 1.8.0
+    ext.kotlin_version = '1.8.0'
     repositories {
         google()
         mavenCentral()
@@ -17,13 +17,17 @@ allprojects {
         mavenCentral()
     }
     
-    // Принудительно задаем версию Kotlin для всех проектов
-    configurations.configureEach {
-        resolutionStrategy {
-            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-            force "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    // Переопределяем Kotlin для всех подпроектов, включая плагины
+    project.plugins.withId('kotlin-android') {
+        project.kotlin.kotlinDependencyHandler.api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    }
+    
+    // Принудительно задаем версию всех зависимостей Kotlin
+    configurations.all {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion kotlin_version
+            }
         }
     }
 }
@@ -31,9 +35,20 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
+    
+    // Изменяем настройки подпроектов
+    afterEvaluate {
+        if (project.hasProperty('android')) {
+            android {
+                compileSdkVersion 34
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_1_8
+                    targetCompatibility JavaVersion.VERSION_1_8
+                }
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

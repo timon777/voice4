@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_sms/flutter_sms.dart';
 import 'package:vibration/vibration.dart';
 import 'dart:async';
 
@@ -116,13 +115,14 @@ void onStart(ServiceInstance service) async {
 
 void sendEmergencySms() async {
   const String message = "Сигнал тревоги от ребенка!";
-  const List<String> recipients = ["+77001234567"];
-  try {
-    await sendSMS(message: message, recipients: recipients, sendDirect: true);
-    debugPrint("SMS отправлено");
-  } catch (e) {
-    debugPrint("Ошибка отправки SMS: $e");
-  }
+  const String recipient = "+77001234567";
+  
+  // Временно отключаем отправку SMS до решения проблемы с плагином
+  debugPrint("SMS отправка отключена для тестовой сборки");
+  debugPrint("Сообщение: $message, получатель: $recipient");
+  
+  // TODO: Реализовать отправку SMS с использованием другого плагина
+  // Например, telephony: ^0.2.0
 }
 
 void triggerVibration() async {
