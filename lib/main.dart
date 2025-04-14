@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:vibration/vibration.dart';
+import 'dart:async'; // Добавляем импорт для Timer
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +38,7 @@ Future<void> initializeService() async {
     iosConfiguration: IosConfiguration(),
   );
   
-  service.startService();
+  await service.startService();
 }
 
 // Функция, запускаемая в фоновом режиме
@@ -60,6 +61,7 @@ void onStart(ServiceInstance service) async {
 
   // Инициализация распознавания речи
   if (await speech.initialize()) {
+    // Использование новых параметров вместо устаревших
     speech.listen(
       onResult: (result) {
         final text = result.recognizedWords.toLowerCase();
@@ -83,9 +85,12 @@ void onStart(ServiceInstance service) async {
           triggerVibration();
         }
       },
-      listenMode: ListenMode.dictation,
-      cancelOnError: false,
-      partialResults: true,
+      // Использование SpeechListenOptions вместо устаревших параметров
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        cancelOnError: false,
+        partialResults: true,
+      ),
     );
   }
 
@@ -96,9 +101,14 @@ void onStart(ServiceInstance service) async {
 
   // Периодическое обновление для поддержания работы сервиса
   Timer.periodic(const Duration(seconds: 30), (timer) async {
-    if (service is AndroidServiceInstance) {
-      if (await service.isForegroundService()) {
-        service.setForegroundNotificationInfo(
+    // Правильная проверка типа AndroidServiceInstance
+    if (service is ServiceInstance && 
+        service.platform == ServicePlatform.android) {
+      // Проверяем, запущен ли сервис в фоновом режиме
+      final AndroidServiceInstance androidService = service as AndroidServiceInstance;
+      if (await androidService.isForegroundService()) {
+        // Обновляем уведомление
+        androidService.setForegroundNotificationInfo(
           title: "Голосовое оповещение активно",
           content: "Приложение прослушивает команды помощи",
         );
@@ -111,7 +121,8 @@ void sendEmergencySms() async {
   const String message = "Сигнал тревоги от ребенка!";
   const List<String> recipients = ["+77001234567"];
   try {
-    await sendSMS(message: message, recipients: recipients, sendDirect: true);
+    String result = await sendSMS(message: message, recipients: recipients, sendDirect: true) as String;
+    debugPrint("SMS отправлено: $result");
   } catch (e) {
     debugPrint("Ошибка отправки SMS: $e");
   }
