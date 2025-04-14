@@ -1,3 +1,6 @@
+include ':app'
+
+// Новый синтаксис settings.gradle для Flutter
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -5,14 +8,3 @@ pluginManagement {
         mavenCentral()
     }
 }
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
-rootProject.name = 'voice_alert_app'
-include ':app'
