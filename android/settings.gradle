@@ -1,6 +1,4 @@
-include ':app'
-
-// Новый синтаксис settings.gradle для Flutter
+// Настройка репозиториев для плагинов - должна быть первой в файле
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -8,3 +6,6 @@ pluginManagement {
         mavenCentral()
     }
 }
+
+// Подключение модуля приложения
+include ':app'
