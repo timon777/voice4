@@ -27,7 +27,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     namespace "com.example.voice_alert_app"
-    compileSdkVersion 33
+    compileSdkVersion 34  // Обновлено до 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -45,7 +45,7 @@ android {
     defaultConfig {
         applicationId "com.example.voice_alert_app"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 34  // Обновлено до 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
