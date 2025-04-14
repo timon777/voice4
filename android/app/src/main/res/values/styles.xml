@@ -1,0 +1,19 @@
+<!-- styles.xml (создайте в android/app/src/main/res/values/) -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Тема для запуска -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    
+    <!-- Обычная тема приложения -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+<!-- launch_background.xml (создайте в android/app/src/main/res/drawable/) -->
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+</layer-list>
