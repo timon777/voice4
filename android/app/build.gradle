@@ -1,12 +1,25 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
 android {
     namespace "com.example.voice_alert_app"
     compileSdk 33
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
 
     defaultConfig {
         applicationId "com.example.voice_alert_app"
@@ -18,12 +31,17 @@ android {
 
     buildTypes {
         release {
-            shrinkResources false
+            signingConfig signingConfigs.debug
             minifyEnabled false
+            shrinkResources false
         }
     }
 }
 
 flutter {
     source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
